@@ -6,3 +6,5 @@ Incluye sonidos, animaciones, logros y secretos ocultos.
 🌈 Creado con HTML, CSS y JS, y jugable directamente desde tu navegador. 💖
 
 👉 [**Jugar ahora**](https://github.com/Sahilytech/HAPPY_LAIKA)
+
+👉 [**Donar ahora**]((https://ko-fi.com/sahily0))
