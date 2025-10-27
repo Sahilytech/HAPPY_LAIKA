@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba GIFs Laika</title>
+<style>
+  body {display:flex;justify-content:center;align-items:center;height:100vh;background:#ffd84d;}
+  img {width:200px;height:200px;image-rendering:pixelated;}
+</style>
+</head>
+<body>
+
+<img id="laika" src="laika_neutral.gif" alt="Laika">
+
+<script>
+const sprites = ['laika_neutral.gif','laika_happy.gif','laika_sleep.gif','laika_tired.gif'];
+let idx = 0;
+const img = document.getElementById('laika');
+
+// Cambia el GIF cada 3 segundos para probar todos
+setInterval(()=>{
+  idx = (idx + 1) % sprites.length;
+  img.src = ''; // reinicia el src para forzar loop
+  setTimeout(()=>img.src = sprites[idx],10);
+},2000);
+</script>
+
+</body>
+</html>

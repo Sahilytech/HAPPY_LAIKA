@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .then(() => console.log("✅ Service Worker registrado"))
+      .catch(err => console.error("❌ Error SW:", err));
+  });
+}
+</script>
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado:', reg))
+        .catch(err => console.log('Error SW:', err));
+    });
+  }
+</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6ec7">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HAPPY LAIKA</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --panel:#a9ddf7;    /* celeste claro del panel */
+  --btn:#f8b2b2;      /* rojo claro para botones */
+  --text:#2b1333;
+  --bg1:#ff6ec7;
+  --bg2:#89b9f0;
+  --bar-fill:#b8a7f3; /* azul barras */
+  --card-width:520px;
+}
+
+/* reset */
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Press Start 2P',monospace}
+html,body{height:100%;overflow:hidden;background:#fff}
+body{display:flex;align-items:center;justify-content:center;position:relative}
+
+/* ---- Canvas fondo (covers whole screen) ---- */
+#bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:-6;display:block}
+
+
+/* main container */
+.container{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;z-index:2}
+.card{width:var(--card-width);max-width:95vw;display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;}
+
+/* center alignment fix for small screens */
+#gameCard { transform: translateY(0); }
+
+/* top row */
+.top-row{width:100%;display:flex;justify-content:space-between;align-items:center;padding:6px 12px;color:var(--text);font-size:13px}
+
+/* sprite area */
+.sprite-wrap{
+  width:320px;height:320px;background:var(--panel);border-radius:14px;border:6px solid rgba(0,0,0,0.08);
+  display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  overflow:hidden;
+}
+.sprite-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.02))}
+img.sprite{width:240px;height:240px;object-fit:contain;image-rendering:pixelated;transition:transform .2s ease}
+
+/* pixel bars */
+.stats{width:100%;display:flex;flex-direction:column;gap:6px;padding:0 12px}
+.stat-row{display:flex;align-items:center;gap:8px}
+.stat-label{width:110px;font-size:11px;color:var(--text);text-transform:uppercase}
+.stat-pixel-bar{flex:1;height:22px;background:rgba(0,0,0,0.04);display:flex;align-items:center;padding:3px;border-radius:6px;overflow:hidden}
+.pixel-block{width:calc((100% - 20px)/20);height:100%;margin-right:2px;background:rgba(255,255,255,0.06);box-shadow:inset 0 -4px rgba(0,0,0,0.06);transition:background-color .25s}
+
+/* buttons */
+.buttons-col{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding-bottom:12px}
+.big-btn{background:var(--btn);color:#fff;border:none;padding:12px 14px;border-radius:10px;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,0.12);transition:transform .12s ease}
+.big-btn:active{transform:translateY(2px)}
+
+/* overlays (intro/menu/settings) - kept */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:40}
+.overlay .card{width:640px;max-width:95vw;background:linear-gradient(180deg,#fff,#fff9);padding:22px;border-radius:16px;border:6px solid rgba(0,0,0,0.08);box-shadow:0 14px 40px rgba(0,0,0,0.2)}
+.overlay h1{font-size:22px;color:var(--text);margin-bottom:12px}
+.overlay p{font-size:13px;color:var(--text);line-height:1.4;margin-bottom:16px;text-align:center}
+
+/* Intro screens specifics */
+#introSplash { z-index:60; background: linear-gradient(180deg, rgba(0,0,0,0.0), rgba(255,255,255,0.02)); display:flex; align-items:center; justify-content:center; }
+#introSplash .title { font-size:42px; color:white; text-shadow:0 6px 20px rgba(0,0,0,0.5); letter-spacing:2px; }
+#introWelcome .card{ text-align:center; }
+
+/* Achievement center */
+.achieve-center{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.95);z-index:50;background:linear-gradient(180deg,#fff8e1,#fff6d1);border:6px solid rgba(0,0,0,0.08);padding:18px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:achIn .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes achIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.achieve-center .stars{display:flex;gap:6px}
+.star{width:18px;height:18px;background:gold;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15);animation:starPop .9s ease}
+@keyframes starPop{0%{transform:scale(.2);opacity:0}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
+.ach-icon{width:48px;height:48px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -4px rgba(0,0,0,.04)}
+.ach-text{font-size:12px;color:var(--text);text-align:center}
+
+/* confetti */
+.confetti{position:fixed;border-radius:50%;width:8px;height:8px;z-index:70;pointer-events:none}
+
+/* pixel stars overlay */
+@keyframes stars {
+  from { background-position: 0 0; }
+  to { background-position: 1000px 1000px; }
+}
+.pixel-stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAKklEQVR42mP4//8/Az0wMDAwMDIQBgYGhv8ZGRh4gAoZGRmE/8YAAK8fEJ0nE+Z9AAAAAElFTkSuQmCC") repeat;
+  background-size: 4px 4px;
+  animation: stars 40s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* responsive */
+@media(max-width:560px){
+  .overlay .card{width:92%}
+  .achieve-center{min-width:86%}
+  .stat-label{width:80px}
+  img.sprite{width:190px;height:190px}
+}
+
+/* small UI tweak for config fields */
+.config-row { display:flex; gap:10px; align-items:center; margin:8px 0; }
+.config-row label { width:110px; font-size:11px; color:var(--text); text-transform:uppercase; }
+input[type="color"] { width:48px; height:32px; border-radius:6px; border:none; padding:0; cursor:pointer; }
+
+/* make sure overlays center on mobile when keyboard opens */
+.overlay .card { max-height: 90vh; overflow:auto; -webkit-overflow-scrolling: touch; }
+
+/* small music controls styling */
+.music-row{display:flex;gap:8px;align-items:center}
+input[type="range"]{width:140px}
+</style>
+</head>
+<body>
+
+<!-- background canvas -->
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+<!-- pixel stars layer -->
+<div class="pixel-stars" aria-hidden="true"></div>
+
+<!-- lace decorations -->
+<div class="lace top" aria-hidden="true"></div>
+<div class="lace bottom" aria-hidden="true"></div>
+<div class="lace left" aria-hidden="true"></div>
+<div class="lace right" aria-hidden="true"></div>
+
+<!-- main UI container -->
+<div class="container">
+  <div class="card" id="gameCard" style="display:none">
+    <div class="top-row">
+      <div id="displayName">Laika</div>
+      <div id="timeDisplay">--:--</div>
+    </div>
+
+    <div class="sprite-wrap">
+      <img id="laikaSprite" class="sprite" src="laika_neutral.gif" alt="Laika">
+      <div id="achieveContainer" style="position:absolute;bottom:6px;width:100%;display:flex;flex-direction:column;align-items:center;pointer-events:none"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-row"><div class="stat-label" id="lab_hambre">HAMBRE</div><div class="stat-pixel-bar" id="bar_hambre"></div></div>
+      <div class="stat-row"><div class="stat-label" id="lab_felicidad">FELICIDAD</div><div class="stat-pixel-bar" id="bar_felicidad"></div></div>
+      <div class="stat-row"><div class="stat-label" id="lab_energia">ENERGÍA</div><div class="stat-pixel-bar" id="bar_energia"></div></div>
+      <div class="stat-row"><div class="stat-label" id="lab_limpieza">LIMPIEZA</div><div class="stat-pixel-bar" id="bar_limpieza"></div></div>
+    </div>
+
+    <div class="buttons-col">
+      <button id="btnComer" class="big-btn">DAR COMIDA</button>
+      <button id="btnJugar" class="big-btn">JUGAR</button>
+      <button id="btnBañar" class="big-btn">BAÑAR</button>
+      <button id="btnDormir" class="big-btn">DORMIR</button>
+      <button id="btnConfig" class="big-btn">CONFIG</button>
+    </div>
+  </div>
+</div>
+
+<!-- Splash intro that just shows "Happy Laika" and waits for touch -->
+<div id="introSplash" class="overlay" role="dialog" aria-modal="true" style="background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.6)); z-index:70;">
+  <div class="title" style="text-align:center; padding:40px;">
+    <div style="font-size:64px; color:#fff; letter-spacing:4px; text-shadow:0 8px 24px rgba(0,0,0,0.6);">HAPPY LAIKA</div>
+    <div style="font-size:12px; color:rgba(255,255,255,0.8); margin-top:18px;">Toca la pantalla para continuar</div>
+  </div>
+</div>
+
+<!-- Welcome intro with options -->
+<div id="introWelcome" class="overlay" role="dialog" aria-modal="true" style="display:none; z-index:71;">
+  <div class="card">
+    <h1>¡Bienvenido a Happy Laika!</h1>
+    <p>Usá los botones para alimentar, jugar, bañar y dormir a Laika.
+       Cada acción afecta las barras. Elegí idioma y nombre en el menú.</p>
+
+    <div style="display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:10px;">
+      <select id="langSelect" style="padding:8px;border-radius:8px">
+        <option value="es">ESPAÑOL</option>
+        <option value="en">ENGLISH</option>
+        <option value="pt">PORTUGUÊS</option>
+        <option value="ru">РУССКИЙ</option>
+      </select>
+      <input id="nameInputMenu" placeholder="Nombre" style="padding:8px;border-radius:8px"/>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="enterGameBtn" class="big-btn">EMPEZAR</button>
+      <button id="demoBtn" class="big-btn">Demo rápida</button>
+    </div>
+
+    <div style="margin-top:14px;text-align:center;font-size:12px;color:#666">
+      Elegí plantilla de entrada:
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+        <button id="tplA" class="big-btn" style="padding:8px 10px">Plantilla A</button>
+        <button id="tplB" class="big-btn" style="padding:8px 10px">Plantilla B</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- settings overlay -->
+<div id="settingsOverlay" class="overlay" style="display:none; z-index:80;">
+  <div class="card">
+    <h1>CONFIGURACIÓN</h1>
+    <div style="display:flex;gap:8px;flex-direction:column;align-items:center">
+      <div class="config-row">
+        <label>Idioma</label>
+        <select id="settingsLang">
+          <option value="es">ES</option><option value="en">EN</option><option value="pt">PT</option><option value="ru">RU</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <label>Nombre</label>
+        <input id="settingsName" placeholder="Laika"/>
+      </div>
+
+      <hr style="width:100%;opacity:0.06;border:none;height:1px;margin:8px 0"/>
+
+      <div style="width:100%;">
+        <div style="font-size:12px;color:var(--text);margin-bottom:6px">Apariencia</div>
+        <div class="config-row"><label>Color panel</label><input id="colorPanel" type="color" value="#cfeefd"></div>
+        <div class="config-row"><label>Color botón</label><input id="colorBtn" type="color" value="#ff9a9a"></div>
+        <div class="config-row"><label>Fondo 1</label><input id="colorBg1" type="color" value="#ff6ec7"></div>
+        <div class="config-row"><label>Fondo 2</label><input id="colorBg2" type="color" value="#ffc6ff"></div>
+      </div>
+
+      <!-- MUSIC OPTIONS ADDED -->
+      <hr style="width:100%;opacity:0.06;border:none;height:1px;margin:8px 0"/>
+      <div style="width:100%;">
+        <div style="font-size:12px;color:var(--text);margin-bottom:6px">Audio</div>
+        <div class="config-row music-row">
+          <label>Música</label>
+          <input id="musicToggle" type="checkbox" />
+          <span style="font-size:11px;color:#b1b1b1">Activar / Desactivar</span>
+        </div>
+        <div class="config-row music-row">
+          <label>Volumen</label>
+          <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.6" />
+          <span id="volLabel" style="font-size:11px;color:#666">60%</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="saveSettingsBtn" class="big-btn">Guardar</button>
+        <button id="closeSettingsBtn" class="big-btn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- holder for centered achievements -->
+<div id="achieveCenterHolder"></div>
+
+<!-- AUDIO ELEMENT (local file) -->
+<!-- Asegurate de tener "Pixel Heartbeat.mp3" en la misma carpeta que este index.html -->
+<audio id="bgMusic" src="Pixel Heartbeat.mp3" loop preload="auto"></audio>
+
+<script>
+/* ========== BACKGROUND SYSTEM ========== */
+/* helpers */
+function lerp(a,b,t){return a + (b-a)*t}
+function lerpColor(c1,c2,t){
+  return [Math.round(lerp(c1[0],c2[0],t)), Math.round(lerp(c1[1],c2[1],t)), Math.round(lerp(c1[2],c2[2],t))];
+}
+function rgbToCss(c){ return 'rgb('+c[0]+','+c[1]+','+c[2]+')' }
+
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W = window.innerWidth, H = window.innerHeight;
+let DPR = Math.max(1, window.devicePixelRatio || 1);
+let gridSize = 36;
+let offset = {x:0,y:0};
+let last = performance.now();
+
+function resize(){
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.ceil(W * DPR);
+  canvas.height = Math.ceil(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+const PALETTES = {
+  morning: { base:[180,220,255], square:[255,220,150], sun:[255,200,90], deco:[170,240,200] },
+  day:     { base:[135,206,250], square:[255,240,170], sun:[255,245,160], deco:[200,240,255] },
+  sunset:  { base:[255,180,140], square:[255,200,120], sun:[255,140,60], deco:[255,210,190] },
+  night:   { base:[22,26,60], square:[100,110,160], moon:[230,230,255], star:[255,240,200], deco:[90,100,160] }
+};
+
+function getPeriod(hour){
+  if(hour >= 6 && hour < 11) return 'morning';
+  if(hour >= 11 && hour < 17) return 'day';
+  if(hour >= 17 && hour < 20) return 'sunset';
+  return 'night';
+}
+
+let currentPalette = { base: PALETTES.day.base.slice(), square: PALETTES.day.square.slice(), sun: PALETTES.day.sun.slice(), deco: PALETTES.day.deco.slice() };
+let targetPalette = Object.assign({}, currentPalette);
+let transitionStart = null, transitionDur = 2000;
+
+function initPaletteFromTime(){
+  const h = new Date().getHours();
+  const p = getPeriod(h);
+  const pal = PALETTES[p];
+  currentPalette.base = pal.base.slice();
+  currentPalette.square = pal.square.slice();
+  currentPalette.sun = pal.sun ? pal.sun.slice() : (pal.moon ? pal.moon.slice() : [255,245,160]);
+  currentPalette.deco = pal.deco ? pal.deco.slice() : (pal.star ? pal.star.slice() : pal.square.slice());
+  targetPalette = JSON.parse(JSON.stringify(currentPalette));
+}
+initPaletteFromTime();
+
+function setTargetPaletteByPeriod(period){
+  const pal = PALETTES[period];
+  const newTarget = {
+    base: pal.base.slice(),
+    square: pal.square.slice(),
+    sun: pal.sun ? pal.sun.slice() : (pal.moon ? pal.moon.slice() : pal.base.slice()),
+    deco: pal.deco ? pal.deco.slice() : (pal.star ? pal.star.slice() : pal.square.slice())
+  };
+  targetPalette = newTarget;
+  transitionStart = performance.now();
+}
+
+function positionForPeriod(period, hour, minute){
+  let start, end;
+  if(period === 'morning'){ start = 6; end = 11; }
+  else if(period === 'day'){ start = 11; end = 17; }
+  else if(period === 'sunset'){ start = 17; end = 20; }
+  else { start = 20; end = 30; }
+  let total = end - start;
+  let current = hour + minute/60;
+  if(period === 'night' && current < 6) current += 24;
+  let prog = (current - start) / total;
+  return Math.max(0, Math.min(1, prog));
+}
+
+/* background draw loop */
+function draw(now){
+  const dt = (now - last) / 1000;
+  last = now;
+  offset.x = (offset.x + 40 * dt) % gridSize;
+  offset.y = (offset.y + 40 * dt) % gridSize;
+
+  if(transitionStart){
+    const t = Math.min(1, (now - transitionStart) / transitionDur);
+    currentPalette.base = lerpColor(currentPalette.base, targetPalette.base, t);
+    currentPalette.square = lerpColor(currentPalette.square, targetPalette.square, t);
+    currentPalette.sun = lerpColor(currentPalette.sun, targetPalette.sun, t);
+    currentPalette.deco = lerpColor(currentPalette.deco, targetPalette.deco, t);
+    if(t >= 1) transitionStart = null;
+  }
+
+  ctx.fillStyle = rgbToCss(currentPalette.base);
+  ctx.fillRect(0,0,W,H);
+
+  const cols = Math.ceil(W / gridSize) + 2;
+  const rows = Math.ceil(H / gridSize) + 2;
+  for(let r=-1;r<rows;r++){
+    for(let c=-1;c<cols;c++){
+      const x = c * gridSize - offset.x;
+      const y = r * gridSize - offset.y;
+      if(((c + r) % 2) === 0){
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillRect(x, y, gridSize, gridSize);
+      }
+    }
+  }
+
+  const seedCount = Math.floor((cols*rows)/6);
+  for(let i=0;i<seedCount;i++){
+    const cc = Math.floor(Math.random()*cols)-1;
+    const rr = Math.floor(Math.random()*rows)-1;
+    const x = cc * gridSize - offset.x + (Math.sin((now/400)+i)*3);
+    const y = rr * gridSize - offset.y + (Math.cos((now/600)+i)*3);
+    const pal = currentPalette.square;
+    ctx.globalAlpha = 0.08 + ( ( (cc+rr+i) % 6 ) * 0.02 );
+    ctx.fillStyle = rgbToCss(pal);
+    ctx.fillRect(x+4, y+4, gridSize-8, gridSize-8);
+    ctx.globalAlpha = 1;
+  }
+
+  const date = new Date();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const period = getPeriod(hour);
+  const progress = positionForPeriod(period, hour, minute);
+  const sunX = lerp(-0.15*W, 1.15*W, progress);
+  const peakY = H * 0.25;
+  const baseY = H * 0.8;
+  const sunY = lerp(baseY, peakY, Math.sin(progress * Math.PI));
+
+  if(period === 'night'){
+    ctx.beginPath();
+    ctx.fillStyle = rgbToCss(currentPalette.sun);
+    ctx.arc(sunX, sunY*0.6, 40, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(sunX+12, sunY*0.6-4, 28, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    for(let s=0;s<80;s++){
+      const sx = (s*47 + ((now/50) % W)) % W;
+      const sy = (s*23 + ((now/80) % H)) % H;
+      ctx.fillStyle = 'rgba(255,240,200,' + (0.3 + 0.7*Math.abs(Math.sin((now/500)+(s*0.1)))) + ')';
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = rgbToCss(currentPalette.sun);
+    ctx.arc(sunX, sunY, 36, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 80, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+/* update palette target when hour changes */
+let lastPeriod = getPeriod(new Date().getHours());
+setTargetPaletteByPeriod(lastPeriod);
+setInterval(()=>{
+  const p = getPeriod(new Date().getHours());
+  if(p !== lastPeriod){
+    lastPeriod = p;
+    setTargetPaletteByPeriod(p);
+  }
+}, 30000);
+
+/* ========== GAME / UI ========== */
+const state = { hambre:70, felicidad:70, energia:70, limpieza:70, durmiendo:false, lang:'es', name:'Laika' };
+const sprites = { neutral:'laika_neutral.gif', happy:'laika_happy.gif', sleep:'laika_sleep.gif', tired:'laika_tired.gif' };
+const T = {
+  es:{comer:'DAR COMIDA',jugar:'JUGAR',banar:'BAÑAR',dormir:'DORMIR',config:'CONFIGURACIÓN',welcome:'¡Bienvenido'},
+  en:{comer:'FEED',jugar:'PLAY',banar:'BATH',dormir:'SLEEP',config:'SETTINGS',welcome:'Welcome'},
+  pt:{comer:'DAR COMIDA',jugar:'BRINCAR',banar:'BANHO',dormir:'DORMIR',config:'CONFIGURAÇÃO',welcome:'Bem-vindo'},
+  ru:{comer:'КОРМ',jugar:'ИГРА',banar:'ВАННА',dormir:'СОН',config:'НАСТРОЙКИ',welcome:'Добро пожаловать'}
+};
+const $ = id => document.getElementById(id);
+function clamp(v){return Math.max(0,Math.min(100,Math.round(v)));}
+
+/* pixel bars creation */
+function makePixelBar(barId){
+  const cont = $(barId);
+  cont.innerHTML = '';
+  for(let i=0;i<20;i++){
+    const b = document.createElement('div');
+    b.className = 'pixel-block';
+    cont.appendChild(b);
+  }
+}
+['bar_hambre','bar_felicidad','bar_energia','bar_limpieza'].forEach(makePixelBar);
+
+function updatePixelBar(barId, value){
+  const cont = $(barId);
+  const blocks = Array.from(cont.children);
+  const fillCount = Math.round((value/100) * blocks.length);
+  blocks.forEach((b,i)=>{
+    if(i < fillCount){
+      b.style.background = i%2===0 ? '#7fd1ff' : '#3aa0ff';
+      b.style.boxShadow = 'inset 0 -6px rgba(0,0,0,0.08)';
+    } else {
+      b.style.background = 'rgba(255,255,255,0.06)';
+      b.style.boxShadow = 'none';
+    }
+  });
+}
+function refreshBars(){ 
+  updatePixelBar('bar_hambre', state.hambre);
+  updatePixelBar('bar_felicidad', state.felicidad);
+  updatePixelBar('bar_energia', state.energia);
+  updatePixelBar('bar_limpieza', state.limpieza);
+}
+
+/* achievements */
+const achievements = [
+  {id:'first_feed', title:{es:'Primer bocado',en:'First Bite',pt:'Primeira Mordida',ru:'Первый корм'}, iconColor:'#ff9a9a', cond: s => s.hambre > 75},
+  {id:'happy_boost', title:{es:'Laika feliz',en:'Laika Happy',pt:'Laika Feliz',ru:'Лайка счастлива'}, iconColor:'#9af7c7', cond: s => s.felicidad >= 90},
+  {id:'clean_master', title:{es:'Spa day',en:'Spa Day',pt:'Dia de Spa',ru:'День спа'}, iconColor:'#9ad2ff', cond: s => s.limpieza >= 100},
+  {id:'sleepy_head', title:{es:'Dulces sueños',en:'Sweet Dreams',pt:'Doces Sonhos',ru:'Сладких снов'}, iconColor:'#fff59d', cond: s => s.energia >= 100}
+];
+const unlocked = new Set();
+function tryUnlockAll(){
+  achievements.forEach(a=>{
+    if(!unlocked.has(a.id) && a.cond(state)){
+      unlocked.add(a.id);
+      const title = a.title[state.lang] || a.title.es;
+      showCenteredAchievement(title, a.iconColor);
+      play8bit();
+    }
+  });
+}
+
+/* centered achievement UI */
+function showCenteredAchievement(text, color){
+  const holder = $('achieveCenterHolder');
+  const el = document.createElement('div');
+  el.className = 'achieve-center';
+  el.innerHTML = `
+    <div class="stars">
+      <div class="star" style="background:${color}"></div>
+      <div class="star" style="background:${color}"></div>
+      <div class="star" style="background:${color}"></div>
+    </div>
+    <div class="ach-icon" aria-hidden="true" style="background:${color}40">
+      <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="18" height="18" rx="3" fill="#fff"/>
+        <rect x="7" y="7" width="10" height="10" fill="${color}"/>
+      </svg>
+    </div>
+    <div class="ach-text">${text}</div>
+  `;
+  holder.appendChild(el);
+  setTimeout(()=> el.style.transform = 'translate(-50%,-50%) scale(1.02)', 80);
+  setTimeout(()=> { el.style.transition = 'opacity .4s'; el.style.opacity = '0'; }, 2400);
+  setTimeout(()=> el.remove(), 2800);
+  for(let i=0;i<16;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = (window.innerWidth * Math.random()) + 'px';
+    c.style.top = (window.innerHeight * Math.random()*0.9) + 'px';
+    c.style.background = ['#ff9a9a','#38d1c9','#ffcc80','#6ea4ff','#fff59d','#cfeefd'][Math.floor(Math.random()*6)];
+    document.body.appendChild(c);
+    setTimeout(()=> c.remove(), 900 + Math.random()*400);
+  }
+}
+
+/* 8-bit sound */
+function play8bit(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = 880;
+    g.gain.value = 0.07;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    setTimeout(()=> o.frequency.value = 660, 80);
+    setTimeout(()=> o.frequency.value = 990, 160);
+    setTimeout(()=> { g.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.1); o.stop(ctx.currentTime + 0.11); }, 260);
+  } catch(e){}
+}
+
+/* actions */
+function setSprite(key){
+  const img = $('laikaSprite');
+  img.src = sprites[key] || sprites.neutral;
+  if(key === 'happy') img.style.transform = 'scale(1.06)'; else img.style.transform = 'scale(1)';
+}
+function feed(){
+  state.hambre = clamp(state.hambre + 18);
+  state.felicidad = clamp(state.felicidad + 6);
+  setSprite('happy'); clearTimeout(window.happyTO);
+  window.happyTO = setTimeout(()=> setSprite('neutral'),1400);
+  refreshBars(); tryUnlockAll();
+}
+function playAction(){
+  state.felicidad = clamp(state.felicidad + 14);
+  state.energia = clamp(state.energia - 10);
+  setSprite('happy'); clearTimeout(window.happyTO);
+  window.happyTO = setTimeout(()=> setSprite('neutral'),1400);
+  refreshBars(); tryUnlockAll();
+}
+function bathe(){
+  state.limpieza = clamp(state.limpieza + 20);
+  state.hambre = clamp(state.hambre - 4);
+  setSprite('happy'); clearTimeout(window.happyTO);
+  window.happyTO = setTimeout(()=> setSprite('neutral'),1200);
+  refreshBars(); tryUnlockAll();
+}
+function toggleSleep(){
+  state.durmiendo = !state.durmiendo;
+  if(state.durmiendo){
+    setSprite('sleep');
+    state._sleepInt = setInterval(()=> {
+      state.energia = clamp(state.energia + 2);
+      refreshBars();
+      tryUnlockAll();
+      if(state.energia >= 100){ clearInterval(state._sleepInt); state.durmiendo=false; setSprite('neutral'); }
+    },700);
+  } else {
+    clearInterval(state._sleepInt);
+    setSprite('neutral');
+  }
+}
+
+/* auto tick & idle loop */
+let simInterval = null;
+function startSim(){
+  if(simInterval) return;
+  simInterval = setInterval(()=> {
+    state.hambre = clamp(state.hambre - 1);
+    if(state.hambre < 30) state.felicidad = clamp(state.felicidad - 1);
+    state.energia = clamp(state.energia - 0.15);
+    refreshBars();
+    tryUnlockAll();
+  },6000);
+
+  setInterval(()=> {
+    if(state.durmiendo) return;
+    const img = $('laikaSprite');
+    if(img && img.src && img.src.includes('happy')) return;
+    if(state.energia < 35) setSprite('tired'); else setSprite('neutral');
+  },4000);
+}
+
+/* ========== AUDIO HANDLING ========== */
+/* We added: #bgMusic audio element, #musicToggle checkbox and #musicVolume range */
+const bgMusic = $('bgMusic');
+let musicAllowedToPlay = false; // will be set true after user interaction (splash click etc.)
+
+// Load persisted settings or defaults
+function loadMusicSettings(){
+  const saved = localStorage.getItem('hl_music_enabled');
+  const savedVol = localStorage.getItem('hl_music_vol');
+  const enabled = saved === null ? false : saved === '1';
+  const vol = savedVol === null ? 0.6 : parseFloat(savedVol);
+  const toggle = $('musicToggle');
+  const volRange = $('musicVolume');
+  const volLabel = $('volLabel');
+  toggle.checked = enabled;
+  volRange.value = vol;
+  volLabel.textContent = Math.round(vol * 100) + '%';
+  bgMusic.volume = vol;
+  // If enabled and user already interacted, try play
+  if(enabled && musicAllowedToPlay){
+    try { bgMusic.play().catch(()=>{}); } catch(e){}
+  }
+}
+function saveMusicSettings(){
+  const enabled = $('musicToggle').checked;
+  const vol = parseFloat($('musicVolume').value);
+  localStorage.setItem('hl_music_enabled', enabled ? '1' : '0');
+  localStorage.setItem('hl_music_vol', String(vol));
+}
+
+function setupMusicUI(){
+  const toggle = $('musicToggle');
+  const volRange = $('musicVolume');
+  const volLabel = $('volLabel');
+
+  toggle.addEventListener('change', ()=> {
+    saveMusicSettings();
+    if(toggle.checked && musicAllowedToPlay){
+      bgMusic.play().catch(()=>{ /* autoplay blocked maybe */ });
+    } else {
+      bgMusic.pause();
+    }
+  });
+
+  volRange.addEventListener('input', ()=> {
+    const v = parseFloat(volRange.value);
+    bgMusic.volume = v;
+    volLabel.textContent = Math.round(v*100) + '%';
+    saveMusicSettings();
+  });
+
+  // If user toggles music in settings after game started, allow immediate play if permitted
+}
+
+// Call play when user does first interaction (splash click / enter) to satisfy autoplay policies
+function allowMusicPlaybackAfterUserGesture(){
+  musicAllowedToPlay = true;
+  // If user previously enabled music, start playing now
+  const enabled = localStorage.getItem('hl_music_enabled') === '1';
+  if(enabled){
+    bgMusic.play().catch(()=>{});
+  }
+}
+
+/* ========== UI / Intros / Config handling ========= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  refreshBars();
+
+  // Buttons
+  $('btnComer').addEventListener('click', feed);
+  $('btnJugar').addEventListener('click', playAction);
+  $('btnBañar').addEventListener('click', bathe);
+  $('btnDormir').addEventListener('click', toggleSleep);
+  $('btnConfig').addEventListener('click', ()=> $('settingsOverlay').style.display = 'flex');
+  $('closeSettingsBtn').addEventListener('click', ()=> $('settingsOverlay').style.display = 'none');
+  $('saveSettingsBtn').addEventListener('click', saveSettings);
+
+  // Intro flow: initial splash waits for touch/click
+  const splash = $('introSplash');
+  const welcome = $('introWelcome');
+  function splashContinue() {
+    // mark that user interacted with page -> now we can play audio if enabled
+    allowMusicPlaybackAfterUserGesture();
+    splash.style.display = 'none';
+    welcome.style.display = 'flex';
+  }
+  splash.addEventListener('click', splashContinue);
+  splash.addEventListener('touchstart', splashContinue, {passive:true});
+
+  // template selector
+  let chosenTemplate = 'A';
+  $('tplA').addEventListener('click', ()=> { chosenTemplate='A'; $('tplA').style.transform='scale(1.06)'; $('tplB').style.transform='scale(1)'; });
+  $('tplB').addEventListener('click', ()=> { chosenTemplate='B'; $('tplB').style.transform='scale(1.06)'; $('tplA').style.transform='scale(1)'; });
+
+  // welcome buttons
+  $('enterGameBtn').addEventListener('click', ()=> {
+    state.name = $('nameInputMenu').value.trim() || 'Laika';
+    state.lang = $('langSelect').value || 'es';
+    $('displayName').textContent = state.name;
+    welcome.style.display = 'none';
+    $('gameCard').style.display = 'flex';
+    if(chosenTemplate==='B') applyTemplateB();
+    updateLangTexts(); startSim();
+    showCenteredAchievement((T[state.lang].welcome || 'Welcome') + ' ' + state.name, '#9af7c7');
+    // user gesture - allow music now
+    allowMusicPlaybackAfterUserGesture();
+  });
+  $('demoBtn').addEventListener('click', ()=> {
+    welcome.style.display = 'none';
+    $('gameCard').style.display = 'flex';
+    updateLangTexts(); startSim();
+    allowMusicPlaybackAfterUserGesture();
+  });
+
+  // settings color pickers
+  const cp = $('colorPanel'), cb = $('colorBtn'), bg1 = $('colorBg1'), bg2 = $('colorBg2');
+  cp.addEventListener('input', ()=> document.documentElement.style.setProperty('--panel', cp.value));
+  cb.addEventListener('input', ()=> document.documentElement.style.setProperty('--btn', cb.value));
+  bg1.addEventListener('input', ()=> { document.documentElement.style.setProperty('--bg1', bg1.value); updateBackgroundGradient(); });
+  bg2.addEventListener('input', ()=> { document.documentElement.style.setProperty('--bg2', bg2.value); updateBackgroundGradient(); });
+
+  // initial values sync
+  cp.value = getComputedStyle(document.documentElement).getPropertyValue('--panel').trim() || '#cfeefd';
+  cb.value = getComputedStyle(document.documentElement).getPropertyValue('--btn').trim() || '#ff9a9a';
+  bg1.value = getComputedStyle(document.documentElement).getPropertyValue('--bg1').trim() || '#ff6ec7';
+  bg2.value = getComputedStyle(document.documentElement).getPropertyValue('--bg2').trim() || '#ffc6ff';
+  updateBackgroundGradient();
+
+  // time display
+  setInterval(()=> $('timeDisplay').textContent = new Date().toLocaleTimeString(), 1000);
+
+  // palette sync initial
+  const nowH = new Date().getHours();
+  setTargetPaletteByPeriod(getPeriod(nowH));
+
+  // MUSIC: setup UI and load saved settings
+  setupMusicUI();
+  loadMusicSettings();
+});
+
+// templates: small function to make template B differ visually
+function applyTemplateB(){
+  // example changes: invert panel and button, tweak card width
+  document.documentElement.style.setProperty('--panel', '#fff8d6');
+  document.documentElement.style.setProperty('--btn', '#6ea4ff');
+  // smaller card for template B
+  document.querySelector('.card').style.width = '420px';
+}
+function updateBackgroundGradient(){
+  const g1 = getComputedStyle(document.documentElement).getPropertyValue('--bg1').trim() || '#ff6ec7';
+  const g2 = getComputedStyle(document.documentElement).getPropertyValue('--bg2').trim() || '#ffc6ff';
+  document.body.style.background = `linear-gradient(to bottom, ${g1}, ${g2})`;
+}
+
+/* save settings */
+function saveSettings(){
+  state.lang = $('settingsLang').value || 'es';
+  state.name = $('settingsName').value.trim() || state.name || 'Laika';
+  $('displayName').textContent = state.name;
+  $('settingsOverlay').style.display = 'none';
+  updateLangTexts();
+  // Save music prefs when saving settings too
+  saveMusicSettings();
+}
+
+/* language update */
+function updateLangTexts(){
+  const t = T[state.lang] || T.es;
+  $('btnComer').textContent = t.comer;
+  $('btnJugar').textContent = t.jugar;
+  $('btnBañar').textContent = t.banar;
+  $('btnDormir').textContent = t.dormir;
+  $('btnConfig').textContent = t.config;
+  $('lab_hambre').textContent = state.lang === 'en' ? 'HUNGER' : (state.lang==='pt' ? 'FOME' : (state.lang==='ru' ? 'ГОЛОД' : 'HAMBRE'));
+  $('lab_energia').textContent = state.lang === 'en' ? 'ENERGY' : (state.lang==='pt' ? 'ENERGIA' : (state.lang==='ru' ? 'ЭНЕРГИЯ' : 'ENERGÍA'));
+  $('lab_limpieza').textContent = state.lang === 'en' ? 'CLEAN' : (state.lang==='pt' ? 'LIMPEZA' : (state.lang==='ru' ? 'ЧИСТОТА' : 'LIMPIEZA'));
+  $('lab_felicidad').textContent = state.lang === 'en' ? 'HAPPINESS' : (state.lang==='pt' ? 'FELICIDADE' : (state.lang==='ru' ? 'СЧАСТЬЕ' : 'FELICIDAD'));
+}
+</script>
+
+<script>
+// === SERVICE WORKER ===
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(() => console.log('✅ Service Worker registrado correctamente'))
+    .catch(err => console.error('❌ Error registrando SW:', err));
+}
+
+// === MÚSICA DE FONDO ===
+const music = new Audio('Pixel Heartbeat.mp3');
+music.loop = true;
+music.volume = 0.5;
+
+document.body.addEventListener('click', () => {
+  if (music.paused) music.play().catch(err => console.log('Error al reproducir:', err));
+});
+
+const musicBtn = document.createElement('button');
+musicBtn.textContent = '🎵 Música';
+Object.assign(musicBtn.style, {
+  position: 'fixed',
+  bottom: '20px',
+  right: '20px',
+  zIndex: '1000',
+  padding: '10px',
+  background: '#ff6ec7',
+  border: 'none',
+  borderRadius: '10px',
+  color: 'white',
+  fontFamily: 'Press Start 2P, monospace',
+  fontSize: '10px',
+  cursor: 'pointer'
+});
+document.body.appendChild(musicBtn);
+
+let playing = false;
+musicBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (!playing) {
+    music.play();
+    playing = true;
+    musicBtn.textContent = '⏸️ Pausar';
+  } else {
+    music.pause();
+    playing = false;
+    musicBtn.textContent = '🎵 Música';
+  }
+});
+
+// === CONFETTI AVANZADO ===
+function lanzarConfetti(cantidad=80) {
+  const container = document.createElement('div');
+  Object.assign(container.style, {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    overflow: 'hidden',
+    zIndex: 9999
+  });
+  document.body.appendChild(container);
+
+  for (let i = 0; i < cantidad; i++) {
+    const c = document.createElement('div');
+    const size = 5 + Math.random()*10;
+    Object.assign(c.style, {
+      position: 'absolute',
+      width: size + 'px',
+      height: size + 'px',
+      backgroundColor: `hsl(${Math.random()*360}, 100%, 50%)`,
+      top: `${Math.random()*100}%`,
+      left: `${Math.random()*100}%`,
+      opacity: Math.random(),
+      borderRadius: '50%',
+      transform: `translateY(0) rotate(${Math.random()*360}deg)`,
+      animation: `caida ${2 + Math.random()*3}s linear forwards`
+    });
+    container.appendChild(c);
+  }
+
+  setTimeout(() => document.body.removeChild(container), 4000);
+}
+
+// CSS para animaciones de confetti
+const style = document.createElement('style');
+style.textContent = `
+@keyframes caida {
+  to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+`;
+document.head.appendChild(style);
+
+// === LOGROS MÚLTIPLES ===
+const sonidosLogro = ['logro1.mp3','logro2.mp3','logro3.mp3'];
+function mostrarLogro(texto) {
+  const logro = document.createElement('div');
+  logro.textContent = texto;
+  Object.assign(logro.style, {
+    position: 'fixed',
+    top: '50px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#ff6ec7',
+    color: 'white',
+    padding: '10px 20px',
+    borderRadius: '10px',
+    fontFamily: 'Press Start 2P, monospace',
+    fontSize: '12px',
+    opacity: 0,
+    zIndex: 10000,
+    pointerEvents: 'none',
+    transition: 'all 0.5s ease-out'
+  });
+  document.body.appendChild(logro);
+
+  requestAnimationFrame(() => {
+    logro.style.opacity = 1;
+    logro.style.top = '80px';
+  });
+
+  setTimeout(() => {
+    logro.style.opacity = 0;
+    logro.style.top = '50px';
+    setTimeout(() => document.body.removeChild(logro), 500);
+  }, 2000);
+
+  const sonido = new Audio(sonidosLogro[Math.floor(Math.random()*sonidosLogro.length)]);
+  sonido.play().catch(() => {});
+}
+
+// === INTERACCIONES DE LAIKA ===
+const laika = document.createElement('div');
+Object.assign(laika.style, {
+  width: '60px',
+  height: '60px',
+  background: 'url("laika.png") no-repeat center/contain',
+  position: 'fixed',
+  bottom: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 1000,
+  transition: 'transform 0.2s ease'
+});
+document.body.appendChild(laika);
+
+let posX = window.innerWidth/2 - 30;
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') posX -= 25;
+  if (e.key === 'ArrowRight') posX += 25;
+  posX = Math.max(0, Math.min(window.innerWidth-60, posX));
+  laika.style.left = posX + 'px';
+});
+
+// Saltito al click con partículas
+laika.addEventListener('click', () => {
+  laika.style.transform = 'translateX(-50%) translateY(-20px)';
+  setTimeout(() => laika.style.transform = 'translateX(-50%) translateY(0)', 200);
+  lanzarConfetti(50);
+  mostrarLogro('¡Logro: Tocaste a Laika!');
+});
+
+// Pequeño cambio de color al azar cada 5s
+setInterval(() => {
+  laika.style.filter = `hue-rotate(${Math.random()*360}deg)`;
+}, 5000);
+const sonidoNariz = new Audio('sonidos/FNAF_Nose_Honk.mp3'); // Ajusta la ruta si es necesario
+
+laika.addEventListener('click', () => {
+  laika.style.transform = 'translateX(-50%) translateY(-20px)';
+  setTimeout(() => laika.style.transform = 'translateX(-50%) translateY(0)', 200);
+  lanzarConfetti(50);
+  mostrarLogro('¡Logro: Tocaste a Laika!');
+  sonidoNariz.play().catch(() => {});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "happy-laika",
+  "version": "1.0.0",
+  "description": "Mi juego Happy Laika",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "Sarah",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^38.4.0",
+    "electron-packager": "^17.1.2",
+    "electron-reload": "^2.0.0-alpha.1"
+  }
+}
