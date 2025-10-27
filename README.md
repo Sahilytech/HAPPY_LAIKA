@@ -7,4 +7,4 @@ Incluye sonidos, animaciones, logros y secretos ocultos.
 
 👉 [**Jugar ahora**](https://github.com/Sahilytech/HAPPY_LAIKA)
 
-👉 [**Donar ahora**]((https://ko-fi.com/sahily0))
+👉 [**Donar ahora**](https://ko-fi.com/sahily0))
